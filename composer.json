@@ -1,0 +1,38 @@
+{
+  "name": "tarasmatskovich/house-framework",
+  "version": "0.0.1",
+  "description": "Light PHP framework",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "proprietary",
+  "keywords": [
+    "php",
+    "http",
+    "wamp",
+    "rest",
+    "framework"
+  ],
+  "authors": [
+    {
+      "name": "matskovich.taras<Мацькович Тарас>",
+      "email": "matskovich.taras@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "phpunit/phpunit": "5.4.6"
+  },
+  "require": {
+    "php": "^7.0",
+    "ext-json": "*",
+    "tarasmatskovich/house-container": "^0.0.1",
+    "psr/http-message": "^1.0",
+    "voryx/thruway": "^0.5.3",
+    "thruway/pawl-transport": "^0.5.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "houseframework\\": "src/framework",
+      "tests\\": "tests/"
+    }
+  }
+}
