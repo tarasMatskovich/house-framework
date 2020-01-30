@@ -1,1 +1,4 @@
-./idea
+vendor/
+.idea/
+.idea/workspace.xml
+client/
