@@ -11,6 +11,7 @@ namespace houseframework\app\factory;
 
 use housedi\ContainerInterface;
 use houseframework\app\ApplicationInterface;
+use houseframework\app\config\ConfigInterface;
 use houseframework\app\factory\enum\ApplicationTypesEnum;
 use houseframework\app\HttpApplication;
 use houseframework\app\request\builder\RequestBuilderInterface;
@@ -46,23 +47,31 @@ class ApplicationFactory implements ApplicationFactoryInterface
     private $requestBuilder;
 
     /**
+     * @var ConfigInterface
+     */
+    private $config;
+
+    /**
      * ApplicationFactory constructor.
      * @param ContainerInterface $container
      * @param RouterInterface $router
      * @param PipelineBuilderInterface $pipelineBuilder
      * @param RequestBuilderInterface $requestBuilder
+     * @param ConfigInterface $config
      */
     public function __construct(
         ContainerInterface $container,
         RouterInterface $router,
         PipelineBuilderInterface $pipelineBuilder,
-        RequestBuilderInterface $requestBuilder
+        RequestBuilderInterface $requestBuilder,
+        ConfigInterface $config
     )
     {
         $this->container = $container;
         $this->router = $router;
         $this->pipelineBuilder = $pipelineBuilder;
         $this->requestBuilder = $requestBuilder;
+        $this->config = $config;
     }
 
     /**
@@ -78,7 +87,8 @@ class ApplicationFactory implements ApplicationFactoryInterface
                     $this->container,
                     $this->router,
                     $this->requestBuilder,
-                    $this->pipelineBuilder
+                    $this->pipelineBuilder,
+                    $this->config
                 );
                 break;
             case ApplicationTypesEnum::APP_HTTP:
