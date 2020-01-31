@@ -9,6 +9,7 @@
 namespace houseframework\app\router\factory;
 
 
+use houseframework\app\factory\enum\ApplicationTypesEnum;
 use houseframework\app\router\HttpRouter;
 use houseframework\app\router\Router;
 use houseframework\app\router\RouterInterface;
@@ -21,19 +22,38 @@ class RouterFactory implements RouterFactoryInterface
 {
 
     /**
-     * @param string $buildKey
+     * @var array
+     */
+    private $routes;
+
+    /**
+     * @var array
+     */
+    private $httpRoutes;
+
+    /**
+     * RouterFactory constructor.
      * @param array $routes
      * @param array $httpRoutes
+     */
+    public function __construct(array $routes = [], $httpRoutes = [])
+    {
+        $this->routes = $routes;
+        $this->httpRoutes = $httpRoutes;
+    }
+
+    /**
+     * @param string $buildKey
      * @return RouterInterface
      * @throws RouterFactoryException
      */
-    public function make(string $buildKey, array $routes, array $httpRoutes = [])
+    public function make(string $buildKey)
     {
         switch ($buildKey) {
             case ApplicationTypesEnum::APP_HTTP:
-                return new HttpRouter(new Router($routes), $httpRoutes);
+                return new HttpRouter(new Router($this->routes), $this->httpRoutes);
             case ApplicationTypesEnum::APP_WAMP:
-                return new Router($routes);
+                return new Router($this->routes);
         }
         throw new RouterFactoryException("Undefined application build key");
     }
