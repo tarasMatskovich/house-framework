@@ -18,6 +18,7 @@ use houseframework\app\request\builder\RequestBuilderInterface;
 use houseframework\app\request\pipeline\builder\PipelineBuilderInterface;
 use houseframework\app\response\WampResponse;
 use houseframework\app\router\RouterInterface;
+use React\EventLoop\Factory;
 use Thruway\ClientSession;
 use Thruway\Peer\Client;
 use Thruway\Peer\ClientInterface;
@@ -99,6 +100,7 @@ class WampApplication implements ApplicationInterface
         $this->actions = $this->router->getRoutes();
         $realm = $this->config->get("transport:wamp:realm");
         $url = $this->config->get("transport:wamp:url");
+        $this->container->set('application.eventLoop', Factory::create());
         $this->session = new Client($realm, $this->container->get('eventLoop'));
         $this->session->addTransportProvider(new PawlTransportProvider($url));
     }
