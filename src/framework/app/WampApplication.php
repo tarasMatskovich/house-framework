@@ -101,7 +101,7 @@ class WampApplication implements ApplicationInterface
         $realm = $this->config->get("transport:wamp:realm");
         $url = $this->config->get("transport:wamp:url");
         $this->container->set('application.eventLoop', Factory::create());
-        $this->session = new Client($realm, $this->container->get('eventLoop'));
+        $this->session = new Client($realm, $this->container->get('application.eventLoop'));
         $this->session->addTransportProvider(new PawlTransportProvider($url));
     }
 
