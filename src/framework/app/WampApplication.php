@@ -119,6 +119,9 @@ class WampApplication implements ApplicationInterface
                         $request = $this->requestBuilder->build();
                         $attributesFromArguments = $arguments[0] ?? null;
                         $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
+                        if (!\is_array($attributes)) {
+                            throw new \Exception('Attributes must be of type array');
+                        }
                         $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                         $pipeline = $this->pipelineBuilder->build($actionRoute);
                         $responseData = $action($pipeline->process($request));
@@ -156,6 +159,9 @@ class WampApplication implements ApplicationInterface
                     $request = $this->requestBuilder->build();
                     $attributesFromArguments = $arguments[0] ?? null;
                     $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
+                    if (!\is_array($attributes)) {
+                        throw new \Exception('Attributes must be of type array');
+                    }
                     $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                     $responseData = $listener($request);
                     return new WampResponse([
