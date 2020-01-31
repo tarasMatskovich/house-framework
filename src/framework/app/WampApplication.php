@@ -120,9 +120,14 @@ class WampApplication implements ApplicationInterface
                     try {
                         $request = $this->requestBuilder->build();
                         $attributesFromArguments = $arguments[0] ?? null;
-                        $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
-                        if (!\is_array($attributes)) {
-                            throw new \Exception('Attributes must be of type array');
+                        $attributes = [];
+                        if ($attributesFromArguments) {
+                            if (is_string($attributesFromArguments)) {
+                                $attributes = json_decode($attributesFromArguments, null);
+                            }
+                            if (is_array($attributesFromArguments)) {
+                                $attributes = (array)$attributesFromArguments;
+                            }
                         }
                         $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                         $pipeline = $this->pipelineBuilder->build($actionRoute);
@@ -160,9 +165,14 @@ class WampApplication implements ApplicationInterface
                 try {
                     $request = $this->requestBuilder->build();
                     $attributesFromArguments = $arguments[0] ?? null;
-                    $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
-                    if (!\is_array($attributes)) {
-                        throw new \Exception('Attributes must be of type array');
+                    $attributes = [];
+                    if ($attributesFromArguments) {
+                        if (is_string($attributesFromArguments)) {
+                            $attributes = json_decode($attributesFromArguments, null);
+                        }
+                        if (is_array($attributesFromArguments)) {
+                            $attributes = (array)$attributesFromArguments;
+                        }
                     }
                     $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                     $responseData = $listener($request);
