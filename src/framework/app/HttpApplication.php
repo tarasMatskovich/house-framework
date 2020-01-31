@@ -9,9 +9,10 @@
 namespace houseframework\app;
 
 
+use GuzzleHttp\Psr7\Response;
 use housedi\ContainerInterface;
 use houseframework\app\request\builder\RequestBuilderInterface;
-use houseframework\app\response\Response;
+use houseframework\app\response\ResponseHandler;
 use houseframework\app\router\RouterInterface;
 
 /**
@@ -68,25 +69,28 @@ class HttpApplication implements ApplicationInterface
             );
             $result = $action($request);
             $response = new Response(
-                $result,
                 200,
                 [
-                    'Content-Type' => "application/json"
-                ]
+                    'Content-Type' => 'application/json'
+                ],
+                \json_encode([
+                    'status' => 'success',
+                    'data' => $result
+                ])
             );
-            $response->respond();
+            ResponseHandler::respond($response);
         } catch (\Exception $e) {
             $response = new Response(
-                [
-                    'status' => 'error',
-                    'message' => $e->getMessage()
-                ],
                 $this->getResponseCode($e),
                 [
                     'Content-Type' => 'application/json'
-                ]
+                ],
+                \json_encode([
+                    'status' => 'error',
+                    'data' => $e->getMessage()
+                ])
             );
-            $response->respond();
+            ResponseHandler::respond($response);
         }
     }
 
