@@ -65,14 +65,16 @@ class PipelineBuilder implements PipelineBuilderInterface
     {
         $pipeline = new Pipeline();
         foreach ($this->globalMiddlewares as $middleware) {
-            $skippedMiddlewaresForAction = $this->skippedActions[$action] ?? [];
-            if (!\in_array($middleware, $skippedMiddlewaresForAction)) {
-                try {
-                    $middleware = $this->container->get($middleware);
-                    if ($this->isMiddlewareValid($middleware)) {
-                        $pipeline = $pipeline->pipe($middleware);
-                    }
-                } catch (\Exception $e) {continue;}
+            if (is_string($middleware)) {
+                $skippedMiddlewaresForAction = $this->skippedActions[$action] ?? [];
+                if (!\in_array($middleware, $skippedMiddlewaresForAction)) {
+                    try {
+                        $middleware = $this->container->get($middleware);
+                        if ($this->isMiddlewareValid($middleware)) {
+                            $pipeline = $pipeline->pipe($middleware);
+                        }
+                    } catch (\Exception $e) {continue;}
+                }
             }
         }
         $middlewaresForAction = $this->middlewares[$action] ?? [];

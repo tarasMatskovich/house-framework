@@ -124,8 +124,7 @@ class WampApplication implements ApplicationInterface
                         if ($attributesFromArguments) {
                             if (is_string($attributesFromArguments)) {
                                 $attributes = json_decode($attributesFromArguments, null);
-                            }
-                            if (is_array($attributesFromArguments)) {
+                            } else {
                                 $attributes = (array)$attributesFromArguments;
                             }
                         }
@@ -169,8 +168,7 @@ class WampApplication implements ApplicationInterface
                     if ($attributesFromArguments) {
                         if (is_string($attributesFromArguments)) {
                             $attributes = json_decode($attributesFromArguments, null);
-                        }
-                        if (is_array($attributesFromArguments)) {
+                        } else {
                             $attributes = (array)$attributesFromArguments;
                         }
                     }
