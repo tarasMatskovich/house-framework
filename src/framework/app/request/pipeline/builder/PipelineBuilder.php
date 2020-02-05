@@ -10,6 +10,7 @@ namespace houseframework\app\request\pipeline\builder;
 
 
 use housedi\ContainerInterface;
+use houseframework\app\request\middleware\MiddlewareInterface;
 use houseframework\app\request\pipeline\Pipeline;
 use houseframework\app\request\pipeline\PipelineInterface;
 
@@ -68,7 +69,9 @@ class PipelineBuilder implements PipelineBuilderInterface
             if (!\in_array($middleware, $skippedMiddlewaresForAction)) {
                 try {
                     $middleware = $this->container->get($middleware);
-                    $pipeline = $pipeline->pipe($middleware);
+                    if ($this->isMiddlewareValid($middleware)) {
+                        $pipeline = $pipeline->pipe($middleware);
+                    }
                 } catch (\Exception $e) {continue;}
             }
         }
@@ -77,11 +80,22 @@ class PipelineBuilder implements PipelineBuilderInterface
             foreach ($middlewaresForAction as $middleware) {
                 try {
                     $middleware = $this->container->get($middleware);
-                    $pipeline = $pipeline->pipe($middleware);
+                    if ($this->isMiddlewareValid($middleware)) {
+                        $pipeline = $pipeline->pipe($middleware);
+                    }
                 } catch (\Exception $e) {continue;}
             }
         }
         return $pipeline;
+    }
+
+    /**
+     * @param $middleware
+     * @return bool
+     */
+    private function isMiddlewareValid($middleware)
+    {
+        return $middleware instanceof MiddlewareInterface;
     }
 
 }
