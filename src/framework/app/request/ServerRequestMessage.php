@@ -12,6 +12,7 @@ namespace houseframework\app\request;
 use GuzzleHttp\Psr7\CachingStream;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use GuzzleHttp\Psr7\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Class ServerRequestMessage
@@ -25,6 +26,9 @@ class ServerRequestMessage extends ServerRequest
      */
     private $newAttributes = [];
 
+    /**
+     * @return ServerRequest|ServerRequestMessage|ServerRequestInterface
+     */
     public static function fromGlobals()
     {
         $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
@@ -41,6 +45,28 @@ class ServerRequestMessage extends ServerRequest
             ->withAttributes($_POST)
             ->withUploadedFiles(self::normalizeFiles($_FILES));
 
+    }
+
+    /**
+     * @param $requestClassName
+     * @return ServerRequest|ServerRequestMessage
+     */
+    public static function fromGlobalsWithSpecialRequest($requestClassName)
+    {
+        $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
+        $headers = getallheaders();
+        $uri = self::getUriFromGlobals();
+        $body = new CachingStream(new LazyOpenStream('php://input', 'r+'));
+        $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL']) : '1.1';
+        $serverRequest = new $requestClassName($method, $uri, $headers, $body, $protocol, $_SERVER);
+        /**
+         * @var ServerRequestMessage $serverRequest
+         */
+        return $serverRequest
+            ->withCookieParams($_COOKIE)
+            ->withQueryParams($_GET)
+            ->withAttributes($_POST)
+            ->withUploadedFiles(self::normalizeFiles($_FILES));
     }
 
     /**

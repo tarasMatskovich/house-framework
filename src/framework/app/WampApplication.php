@@ -16,8 +16,11 @@ use houseframework\app\config\ConfigInterface;
 use houseframework\app\eventlistener\EventListenerInterface;
 use houseframework\app\request\builder\RequestBuilderInterface;
 use houseframework\app\request\pipeline\builder\PipelineBuilderInterface;
+use houseframework\app\request\ValidatedRequestMessage;
+use houseframework\app\request\validator\Validator;
 use houseframework\app\response\WampResponse;
 use houseframework\app\router\RouterInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use React\EventLoop\Factory;
 use Thruway\ClientSession;
 use Thruway\Peer\Client;
@@ -130,7 +133,38 @@ class WampApplication implements ApplicationInterface
                         }
                         $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                         $pipeline = $this->pipelineBuilder->build($actionRoute);
-                        $responseData = $action($pipeline->process($request));
+                        $pipelineResult = null;
+                        $reflectionClass = new \ReflectionClass($pipelineResult);
+                        $invokable = $reflectionClass->getMethod('__invoke');
+                        if ($invokable) {
+                            $invokableParameters = $invokable->getParameters();
+                            $invokableParameter = $invokableParameters[0] ?? null;
+                            if ($invokableParameter) {
+                                $className = $invokableParameter->getClass();
+                                if ($className !== ServerRequestInterface::class) {
+                                    if (!class_exists($className)) {
+                                        throw new \Exception('Class: ' . $className . ' does not exist in action', 500);
+                                    }
+                                    $specialRequest = new $className;
+                                    if (!$specialRequest instanceof ValidatedRequestMessage) {
+                                        throw new \Exception("Class: " . $className . ' must extends ' . ValidatedRequestMessage::class, 500);
+                                    }
+                                    $requestValidator = new Validator();
+                                    if (!$requestValidator->validate($pipelineResult, $specialRequest->getRules())) {
+                                        throw new \Exception(json_encode($requestValidator->getErrors()), 500);
+                                    }
+                                    $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
+                                    $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
+                                    $pipelineResult = $pipeline->process($specialRequest);
+                                } else {
+                                    $pipelineResult = $pipeline->process($request);
+                                }
+                            }
+                        }
+                        if (!$pipelineResult) {
+                            throw new \Exception('Pipeline build was failed', 500);
+                        }
+                        $responseData = $action($pipelineResult);
                         return new WampResponse([
                             'status' => 'success',
                             'data' => $responseData

@@ -9,6 +9,7 @@
 namespace houseframework\app\request\builder;
 
 
+use houseframework\app\request\ValidatedRequestMessage;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -22,6 +23,12 @@ interface RequestBuilderInterface
      * @return ServerRequestInterface
      */
     public function build();
+
+    /**
+     * @param $specialRequestClassName
+     * @return ValidatedRequestMessage
+     */
+    public function buildSpecialRequest($specialRequestClassName);
 
     /**
      * @param ServerRequestInterface $request
