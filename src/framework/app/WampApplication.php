@@ -133,28 +133,27 @@ class WampApplication implements ApplicationInterface
                         }
                         $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
                         $pipeline = $this->pipelineBuilder->build($actionRoute);
+                        $reflectionClass = new \ReflectionClass($action);
                         $pipelineResult = null;
-                        $reflectionClass = new \ReflectionClass($pipelineResult);
                         $invokable = $reflectionClass->getMethod('__invoke');
                         if ($invokable) {
                             $invokableParameters = $invokable->getParameters();
                             $invokableParameter = $invokableParameters[0] ?? null;
                             if ($invokableParameter) {
-                                $className = $invokableParameter->getClass();
+                                $className = $invokableParameter->getClass()->getName();
                                 if ($className !== ServerRequestInterface::class) {
                                     if (!class_exists($className)) {
                                         throw new \Exception('Class: ' . $className . ' does not exist in action', 500);
                                     }
-                                    $specialRequest = new $className;
+                                    $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
                                     if (!$specialRequest instanceof ValidatedRequestMessage) {
                                         throw new \Exception("Class: " . $className . ' must extends ' . ValidatedRequestMessage::class, 500);
                                     }
+                                    $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
                                     $requestValidator = new Validator();
-                                    if (!$requestValidator->validate($pipelineResult, $specialRequest->getRules())) {
+                                    if (!$requestValidator->validate($specialRequest, $specialRequest->getRules())) {
                                         throw new \Exception(json_encode($requestValidator->getErrors()), 500);
                                     }
-                                    $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
-                                    $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
                                     $pipelineResult = $pipeline->process($specialRequest);
                                 } else {
                                     $pipelineResult = $pipeline->process($request);

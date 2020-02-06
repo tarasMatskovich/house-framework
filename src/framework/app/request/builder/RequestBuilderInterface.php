@@ -33,7 +33,7 @@ interface RequestBuilderInterface
     /**
      * @param ServerRequestInterface $request
      * @param array $attributes
-     * @return ServerRequestInterface
+     * @return ServerRequestInterface|ValidatedRequestMessage
      */
     public function attachAttributesToRequest(ServerRequestInterface $request, array $attributes);
 

@@ -16,6 +16,6 @@ namespace houseframework\action;
 interface ActionInterface
 {
 
-    public function __invoke($request);
+//    public function __invoke($request);
 
 }
