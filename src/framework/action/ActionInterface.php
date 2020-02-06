@@ -9,8 +9,6 @@
 namespace houseframework\action;
 
 
-use Psr\Http\Message\ServerRequestInterface;
-
 /**
  * Interface ActionInterface
  * @package houseframework\action
@@ -18,6 +16,6 @@ use Psr\Http\Message\ServerRequestInterface;
 interface ActionInterface
 {
 
-    public function __invoke(ServerRequestInterface $request);
+    public function __invoke($request);
 
 }
