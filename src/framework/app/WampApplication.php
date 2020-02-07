@@ -120,60 +120,7 @@ class WampApplication implements ApplicationInterface
                 $actionRoute = $action;
                 $action = $this->container->get($action);
                 $session->register($key, function ($arguments) use ($action, $actionRoute) {
-                    try {
-                        $request = $this->requestBuilder->build();
-                        $attributesFromArguments = $arguments[0] ?? null;
-                        $attributes = [];
-                        if ($attributesFromArguments) {
-                            if (is_string($attributesFromArguments)) {
-                                $attributes = json_decode($attributesFromArguments, null);
-                            } else {
-                                $attributes = (array)$attributesFromArguments;
-                            }
-                        }
-                        $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
-                        $pipeline = $this->pipelineBuilder->build($actionRoute);
-                        $reflectionClass = new \ReflectionClass($action);
-                        $pipelineResult = null;
-                        $invokable = $reflectionClass->getMethod('__invoke');
-                        if ($invokable) {
-                            $invokableParameters = $invokable->getParameters();
-                            $invokableParameter = $invokableParameters[0] ?? null;
-                            if ($invokableParameter) {
-                                $className = $invokableParameter->getClass()->getName();
-                                if ($className !== ServerRequestInterface::class) {
-                                    if (!class_exists($className)) {
-                                        throw new \Exception('Class: ' . $className . ' does not exist in action', 500);
-                                    }
-                                    $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
-                                    if (!$specialRequest instanceof ValidatedRequestMessage) {
-                                        throw new \Exception("Class: " . $className . ' must extends ' . ValidatedRequestMessage::class, 500);
-                                    }
-                                    $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
-                                    $requestValidator = new Validator();
-                                    if (!$requestValidator->validate($specialRequest, $specialRequest->getRules())) {
-                                        throw new \Exception(json_encode($requestValidator->getErrors()), 500);
-                                    }
-                                    $pipelineResult = $pipeline->process($specialRequest);
-                                } else {
-                                    $pipelineResult = $pipeline->process($request);
-                                }
-                            }
-                        }
-                        if (!$pipelineResult) {
-                            throw new \Exception('Pipeline build was failed', 500);
-                        }
-                        $responseData = $action($pipelineResult);
-                        return new WampResponse([
-                            'status' => 'success',
-                            'data' => $responseData
-                        ]);
-                    } catch (\Exception $e) {
-                        return new WampResponse([
-                            'status' => 'error',
-                            'data' => $e->getMessage()
-                        ]);
-                    }
+                    return $this->process($arguments, $action, $actionRoute);
                 });
             }
             $this->registerListeners($session);
@@ -192,32 +139,75 @@ class WampApplication implements ApplicationInterface
         $eventListener = $this->container->get(EventListenerInterface::class);
         $channels = $eventListener->getChannels();
         foreach ($channels as $channelKey => $channelValue) {
+            $listenerRoute = $channelValue;
             $listener = $this->container->get($channelValue);
-            $session->subscribe($channelKey, function ($arguments) use ($listener) {
-                try {
-                    $request = $this->requestBuilder->build();
-                    $attributesFromArguments = $arguments[0] ?? null;
-                    $attributes = [];
-                    if ($attributesFromArguments) {
-                        if (is_string($attributesFromArguments)) {
-                            $attributes = json_decode($attributesFromArguments, null);
-                        } else {
-                            $attributes = (array)$attributesFromArguments;
-                        }
-                    }
-                    $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
-                    $responseData = $listener($request);
-                    return new WampResponse([
-                        'status' => 'success',
-                        'data' => $responseData
-                    ]);
-                } catch (\Exception $e) {
-                    return new WampResponse([
-                        'status' => 'error',
-                        'data' => $e->getMessage()
-                    ]);
-                }
+            $session->subscribe($channelKey, function ($arguments) use ($listener, $listenerRoute) {
+                return $this->process($arguments, $listener, $listenerRoute);
             });
+        }
+    }
+
+    /**
+     * @param $arguments
+     * @param $action
+     * @param $actionRoute
+     * @return WampResponse
+     */
+    private function process($arguments, $action, $actionRoute)
+    {
+        try {
+            $request = $this->requestBuilder->build();
+            $attributesFromArguments = $arguments[0] ?? null;
+            $attributes = [];
+            if ($attributesFromArguments) {
+                if (is_string($attributesFromArguments)) {
+                    $attributes = json_decode($attributesFromArguments, null);
+                } else {
+                    $attributes = (array)$attributesFromArguments;
+                }
+            }
+            $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
+            $pipeline = $this->pipelineBuilder->build($actionRoute);
+            $reflectionClass = new \ReflectionClass($action);
+            $pipelineResult = null;
+            $invokable = $reflectionClass->getMethod('__invoke');
+            if ($invokable) {
+                $invokableParameters = $invokable->getParameters();
+                $invokableParameter = $invokableParameters[0] ?? null;
+                if ($invokableParameter) {
+                    $className = $invokableParameter->getClass()->getName();
+                    if ($className !== ServerRequestInterface::class) {
+                        if (!class_exists($className)) {
+                            throw new \Exception('Class: ' . $className . ' does not exist in action', 500);
+                        }
+                        $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
+                        if (!$specialRequest instanceof ValidatedRequestMessage) {
+                            throw new \Exception("Class: " . $className . ' must extends ' . ValidatedRequestMessage::class, 500);
+                        }
+                        $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
+                        $requestValidator = new Validator();
+                        if (!$requestValidator->validate($specialRequest, $specialRequest->getRules())) {
+                            throw new \Exception(json_encode($requestValidator->getErrors()), 500);
+                        }
+                        $pipelineResult = $pipeline->process($specialRequest);
+                    } else {
+                        $pipelineResult = $pipeline->process($request);
+                    }
+                }
+            }
+            if (!$pipelineResult) {
+                throw new \Exception('Pipeline build was failed', 500);
+            }
+            $responseData = $action($pipelineResult);
+            return new WampResponse([
+                'status' => 'success',
+                'data' => $responseData
+            ]);
+        } catch (\Exception $e) {
+            return new WampResponse([
+                'status' => 'error',
+                'data' => $e->getMessage()
+            ]);
         }
     }
 

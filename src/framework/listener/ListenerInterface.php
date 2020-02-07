@@ -9,19 +9,11 @@
 namespace houseframework\listener;
 
 
-use Psr\Http\Message\ServerRequestInterface;
-
 /**
  * Interface ListenerInterface
  * @package houseframework\listener
  */
 interface ListenerInterface
 {
-
-    /**
-     * @param ServerRequestInterface $request
-     * @return mixed
-     */
-    public function __invoke(ServerRequestInterface $request);
 
 }
