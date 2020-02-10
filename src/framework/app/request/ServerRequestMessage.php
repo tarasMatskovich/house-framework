@@ -36,13 +36,14 @@ class ServerRequestMessage extends ServerRequest
         $uri = self::getUriFromGlobals();
         $body = new CachingStream(new LazyOpenStream('php://input', 'r+'));
         $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL']) : '1.1';
-
+        $parsedBody = json_decode(file_get_contents('php://input'), true);
         $serverRequest = new ServerRequestMessage($method, $uri, $headers, $body, $protocol, $_SERVER);
 
         return $serverRequest
             ->withCookieParams($_COOKIE)
             ->withQueryParams($_GET)
             ->withAttributes($_POST)
+            ->withParsedBody($parsedBody)
             ->withUploadedFiles(self::normalizeFiles($_FILES));
 
     }
@@ -57,6 +58,7 @@ class ServerRequestMessage extends ServerRequest
         $headers = getallheaders();
         $uri = self::getUriFromGlobals();
         $body = new CachingStream(new LazyOpenStream('php://input', 'r+'));
+        $parsedBody = json_decode(file_get_contents('php://input'), true);
         $protocol = isset($_SERVER['SERVER_PROTOCOL']) ? str_replace('HTTP/', '', $_SERVER['SERVER_PROTOCOL']) : '1.1';
         $serverRequest = new $requestClassName($method, $uri, $headers, $body, $protocol, $_SERVER);
         /**
@@ -66,6 +68,7 @@ class ServerRequestMessage extends ServerRequest
             ->withCookieParams($_COOKIE)
             ->withQueryParams($_GET)
             ->withAttributes($_POST)
+            ->withParsedBody($parsedBody)
             ->withUploadedFiles(self::normalizeFiles($_FILES));
     }
 
@@ -80,18 +83,33 @@ class ServerRequestMessage extends ServerRequest
         return $request;
     }
 
+    /**
+     * @return array
+     */
     public function getAttributes()
     {
         return $this->newAttributes;
     }
 
+    /**
+     * @param $attribute
+     * @param null $default
+     * @return mixed|null
+     */
     public function getAttribute($attribute, $default = null)
     {
-        if (!isset($this->newAttributes[$attribute]))
-            return $default;
+        if (!isset($this->newAttributes[$attribute])) {
+            $parsedBody = $this->getParsedBody();
+            return $parsedBody[$attribute] ?? $default;
+        }
         return $this->newAttributes[$attribute];
     }
 
+    /**
+     * @param $attribute
+     * @param $value
+     * @return ServerRequest|ServerRequestMessage
+     */
     public function withAttribute($attribute, $value)
     {
         $new = clone $this;
