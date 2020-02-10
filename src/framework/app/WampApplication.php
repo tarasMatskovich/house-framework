@@ -12,11 +12,16 @@ namespace houseframework\app;
 use Evenement\EventEmitterInterface;
 use housedi\ContainerInterface;
 use houseframework\action\ActionInterface;
+use houseframework\app\config\ConfigInterface;
 use houseframework\app\eventlistener\EventListenerInterface;
 use houseframework\app\request\builder\RequestBuilderInterface;
 use houseframework\app\request\pipeline\builder\PipelineBuilderInterface;
-use houseframework\app\response\Response;
+use houseframework\app\request\ValidatedRequestMessage;
+use houseframework\app\request\validator\Validator;
+use houseframework\app\response\WampResponse;
 use houseframework\app\router\RouterInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\Factory;
 use Thruway\ClientSession;
 use Thruway\Peer\Client;
 use Thruway\Peer\ClientInterface;
@@ -60,24 +65,32 @@ class WampApplication implements ApplicationInterface
     private $pipelineBuilder;
 
     /**
+     * @var ConfigInterface
+     */
+    private $config;
+
+    /**
      * WampApplication constructor.
      * @param ContainerInterface $container
      * @param RouterInterface $router
      * @param RequestBuilderInterface $requestBuilder
      * @param PipelineBuilderInterface $pipelineBuilder
+     * @param ConfigInterface $config
      * @throws \Exception
      */
     public function __construct(
         ContainerInterface $container,
         RouterInterface $router,
         RequestBuilderInterface $requestBuilder,
-        PipelineBuilderInterface $pipelineBuilder
+        PipelineBuilderInterface $pipelineBuilder,
+        ConfigInterface $config
     )
     {
         $this->container = $container;
         $this->router = $router;
         $this->requestBuilder = $requestBuilder;
         $this->pipelineBuilder = $pipelineBuilder;
+        $this->config = $config;
         $this->beforeRun();
     }
 
@@ -88,8 +101,11 @@ class WampApplication implements ApplicationInterface
     private function beforeRun()
     {
         $this->actions = $this->router->getRoutes();
-        $this->session = new Client("realm1", $this->container->get('eventLoop'));
-        $this->session->addTransportProvider(new PawlTransportProvider("ws://127.0.0.1:8080/ws"));
+        $realm = $this->config->get("transport:wamp:realm");
+        $url = $this->config->get("transport:wamp:url");
+        $this->container->set('application.eventLoop', Factory::create());
+        $this->session = new Client($realm, $this->container->get('application.eventLoop'));
+        $this->session->addTransportProvider(new PawlTransportProvider($url));
     }
 
     /**
@@ -104,13 +120,7 @@ class WampApplication implements ApplicationInterface
                 $actionRoute = $action;
                 $action = $this->container->get($action);
                 $session->register($key, function ($arguments) use ($action, $actionRoute) {
-                    $request = $this->requestBuilder->build();
-                    $attributesFromArguments = $arguments[0] ?? null;
-                    $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
-                    $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
-                    $pipeline = $this->pipelineBuilder->build($actionRoute);
-                    $responseData = $action($pipeline->process($request));
-                    return new Response($responseData);
+                    return $this->process($arguments, $action, $actionRoute);
                 });
             }
             $this->registerListeners($session);
@@ -129,15 +139,75 @@ class WampApplication implements ApplicationInterface
         $eventListener = $this->container->get(EventListenerInterface::class);
         $channels = $eventListener->getChannels();
         foreach ($channels as $channelKey => $channelValue) {
+            $listenerRoute = $channelValue;
             $listener = $this->container->get($channelValue);
-            $session->subscribe($channelKey, function ($arguments) use ($listener) {
-                $request = $this->requestBuilder->build();
-                $attributesFromArguments = $arguments[0] ?? null;
-                $attributes = $attributesFromArguments ? json_decode($attributesFromArguments, true) : [];
-                $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
-                $responseData = $listener($request);
-                return new Response($responseData);
+            $session->subscribe($channelKey, function ($arguments) use ($listener, $listenerRoute) {
+                return $this->process($arguments, $listener, $listenerRoute);
             });
+        }
+    }
+
+    /**
+     * @param $arguments
+     * @param $action
+     * @param $actionRoute
+     * @return WampResponse
+     */
+    private function process($arguments, $action, $actionRoute)
+    {
+        try {
+            $request = $this->requestBuilder->build();
+            $attributesFromArguments = $arguments[0] ?? null;
+            $attributes = [];
+            if ($attributesFromArguments) {
+                if (is_string($attributesFromArguments)) {
+                    $attributes = json_decode($attributesFromArguments, null);
+                } else {
+                    $attributes = (array)$attributesFromArguments;
+                }
+            }
+            $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
+            $pipeline = $this->pipelineBuilder->build($actionRoute);
+            $reflectionClass = new \ReflectionClass($action);
+            $pipelineResult = null;
+            $invokable = $reflectionClass->getMethod('__invoke');
+            if ($invokable) {
+                $invokableParameters = $invokable->getParameters();
+                $invokableParameter = $invokableParameters[0] ?? null;
+                if ($invokableParameter) {
+                    $className = $invokableParameter->getClass()->getName();
+                    if ($className !== ServerRequestInterface::class) {
+                        if (!class_exists($className)) {
+                            throw new \Exception('Class: ' . $className . ' does not exist in action', 500);
+                        }
+                        $specialRequest = $this->requestBuilder->buildSpecialRequest($className);
+                        if (!$specialRequest instanceof ValidatedRequestMessage) {
+                            throw new \Exception("Class: " . $className . ' must extends ' . ValidatedRequestMessage::class, 500);
+                        }
+                        $specialRequest = $this->requestBuilder->attachAttributesToRequest($specialRequest, $attributes);
+                        $requestValidator = new Validator();
+                        if (!$requestValidator->validate($specialRequest, $specialRequest->getRules())) {
+                            throw new \Exception(json_encode($requestValidator->getErrors()), 500);
+                        }
+                        $pipelineResult = $pipeline->process($specialRequest);
+                    } else {
+                        $pipelineResult = $pipeline->process($request);
+                    }
+                }
+            }
+            if (!$pipelineResult) {
+                throw new \Exception('Pipeline build was failed. Check your action: ' . $actionRoute, 500);
+            }
+            $responseData = $action($pipelineResult);
+            return new WampResponse([
+                'status' => 'success',
+                'data' => $responseData
+            ]);
+        } catch (\Exception $e) {
+            return new WampResponse([
+                'status' => 'error',
+                'data' => $e->getMessage()
+            ]);
         }
     }
 

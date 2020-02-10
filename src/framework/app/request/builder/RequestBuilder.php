@@ -28,6 +28,15 @@ class RequestBuilder implements RequestBuilderInterface
     }
 
     /**
+     * @param $specialRequestClassName
+     * @return \GuzzleHttp\Psr7\ServerRequest|ServerRequestMessage|\houseframework\app\request\ValidatedRequestMessage
+     */
+    public function buildSpecialRequest($specialRequestClassName)
+    {
+        return ServerRequestMessage::fromGlobalsWithSpecialRequest($specialRequestClassName);
+    }
+
+    /**
      * @param ServerRequestInterface $request
      * @param array $attributes
      * @return ServerRequestInterface

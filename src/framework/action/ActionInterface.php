@@ -9,15 +9,11 @@
 namespace houseframework\action;
 
 
-use Psr\Http\Message\ServerRequestInterface;
-
 /**
  * Interface ActionInterface
  * @package houseframework\action
  */
 interface ActionInterface
 {
-
-    public function __invoke(ServerRequestInterface $request);
 
 }

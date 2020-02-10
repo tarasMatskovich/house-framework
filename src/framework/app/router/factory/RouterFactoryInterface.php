@@ -20,10 +20,8 @@ interface RouterFactoryInterface
 
     /**
      * @param string $buildKey
-     * @param array $routes
-     * @param array $httpRoutes
      * @return RouterInterface
      */
-    public function make(string $buildKey, array $routes, array $httpRoutes);
+    public function make(string $buildKey);
 
 }

@@ -16,4 +16,10 @@ namespace houseframework\app\config;
 interface ConfigInterface
 {
 
+    /**
+     * @param $key
+     * @return mixed|null
+     */
+    public function get($key);
+
 }
