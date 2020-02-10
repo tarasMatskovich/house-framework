@@ -30,7 +30,7 @@ class ResponseHandler
     /**
      * @param ResponseInterface $response
      */
-    private static function sendHeaders(ResponseInterface $response)
+    private static function sendBody(ResponseInterface $response)
     {
         echo $response->getBody();
     }
@@ -38,7 +38,7 @@ class ResponseHandler
     /**
      * @param ResponseInterface $response
      */
-    private static function sendBody(ResponseInterface $response)
+    private static function sendHeaders(ResponseInterface $response)
     {
         // headers have already been sent by the developer
         if (headers_sent()) {
