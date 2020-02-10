@@ -196,7 +196,7 @@ class WampApplication implements ApplicationInterface
                 }
             }
             if (!$pipelineResult) {
-                throw new \Exception('Pipeline build was failed', 500);
+                throw new \Exception('Pipeline build was failed. Check your action: ' . $actionRoute, 500);
             }
             $responseData = $action($pipelineResult);
             return new WampResponse([

@@ -95,7 +95,8 @@ class ApplicationFactory implements ApplicationFactoryInterface
                 return new HttpApplication(
                     $this->container,
                     $this->router,
-                    $this->requestBuilder
+                    $this->requestBuilder,
+                    $this->pipelineBuilder
                 );
             default:
                 throw new ApplicationFactoryException("Undefined application type!");
