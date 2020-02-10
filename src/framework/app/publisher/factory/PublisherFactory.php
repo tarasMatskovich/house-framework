@@ -30,7 +30,7 @@ class PublisherFactory implements PublisherFactoryInterface
      * PublisherFactory constructor.
      * @param ConfigInterface $config
      */
-    private function __construct(ConfigInterface $config)
+    public function __construct(ConfigInterface $config)
     {
         $this->config = $config;
     }
