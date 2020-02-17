@@ -27,7 +27,8 @@
     "tarasmatskovich/house-container": "^0.0.1",
     "psr/http-message": "^1.0",
     "voryx/thruway": "^0.5.3",
-    "thruway/pawl-transport": "^0.5.1"
+    "thruway/pawl-transport": "^0.5.1",
+    "wyrihaximus/react-child-process-pool": "^1.6"
   },
   "autoload": {
     "psr-4": {
