@@ -57,9 +57,13 @@ class ApplicationSubProcess implements ChildInterface
      */
     private function build(Payload $payload)
     {
-        $container = $payload[PayloadKeysEnum::CONTAINER_DEF];
-        $requestBuilder = $payload[PayloadKeysEnum::REQUEST_BUILDER_DEF];
-        $pipelineBuilder = $payload[PayloadKeysEnum::PIPELINE_BUILDER_DEF];
+        $payload = $payload->getPayload();
+        $container = $payload[PayloadKeysEnum::CONTAINER_DEF] ?? null;
+        $container = \Opis\Closure\unserialize($container);
+        $requestBuilder = $payload[PayloadKeysEnum::REQUEST_BUILDER_DEF] ?? null;
+        $requestBuilder = \Opis\Closure\unserialize($requestBuilder);
+        $pipelineBuilder = $payload[PayloadKeysEnum::PIPELINE_BUILDER_DEF] ?? null;
+        $pipelineBuilder = \Opis\Closure\unserialize($pipelineBuilder);
         return new SubProcessApplication(
             $container,
             $requestBuilder,

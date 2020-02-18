@@ -94,9 +94,9 @@ class ApplicationHostProcess implements ApplicationHostProcessInterface
                 ApplicationSubProcess::RPC_BUILD,
                 [
                     ApplicationSubProcess::CONFIG => $parameters,
-                    PayloadKeysEnum::CONTAINER_DEF => $this->container,
-                    PayloadKeysEnum::REQUEST_BUILDER_DEF => $requestBuilder,
-                    PayloadKeysEnum::PIPELINE_BUILDER_DEF => $pipelineBuilder
+                    PayloadKeysEnum::CONTAINER_DEF => \Opis\Closure\serialize($this->container),
+                    PayloadKeysEnum::REQUEST_BUILDER_DEF => \Opis\Closure\serialize($requestBuilder),
+                    PayloadKeysEnum::PIPELINE_BUILDER_DEF => \Opis\Closure\serialize($pipelineBuilder)
                 ]
             ));
         });
@@ -130,11 +130,11 @@ class ApplicationHostProcess implements ApplicationHostProcessInterface
     public function run(string $action, $attributes, ClientSession $clientSession)
     {
         return $this->pool->rpc(Factory::rpc(
-            'run',
+            ApplicationSubProcess::RPC_RUN,
             [
                 PayloadKeysEnum::ACTION => $action,
                 PayloadKeysEnum::ATTRIBUTES => $attributes,
-                PayloadKeysEnum::CLIENT_SESSION => $clientSession
+                PayloadKeysEnum::CLIENT_SESSION => \Opis\Closure\serialize($clientSession)
             ])
         )->then(function (Payload $payload) {
             return $payload->getPayload();
