@@ -66,11 +66,6 @@ class SubProcessApplication implements SubProcessApplicationInterface
     {
         try {
             $payload = $payload->getPayload();
-            $clientSession = $payload[PayloadKeysEnum::CLIENT_SESSION] ?? null;
-            if ($clientSession) {
-                $clientSession = \Opis\Closure\unserialize($clientSession);
-            }
-            $this->container->set('application.clientSession', $clientSession);
             $actionRoute = $payload[PayloadKeysEnum::ACTION];
             $action = $this->container->get($actionRoute);
             $arguments = $payload[PayloadKeysEnum::ATTRIBUTES];
