@@ -60,7 +60,7 @@ class SubProcessApplication implements SubProcessApplicationInterface
 
     /**
      * @param Payload $payload
-     * @return WampResponse
+     * @return array
      */
     public function run(Payload $payload)
     {
@@ -117,15 +117,15 @@ class SubProcessApplication implements SubProcessApplicationInterface
                 throw new \Exception('Pipeline build was failed. Check your action: ' . $actionRoute, 500);
             }
             $responseData = $action($pipelineResult);
-            return new WampResponse([
+            return [
                 'status' => 'success',
                 'data' => $responseData
-            ]);
+            ];
         } catch (\Exception $e) {
-            return new WampResponse([
+            return [
                 'status' => 'error',
                 'data' => $e->getMessage()
-            ]);
+            ];
         }
     }
 }

@@ -9,7 +9,6 @@
 namespace houseframework\app\process\app;
 
 
-use houseframework\app\response\WampResponse;
 use WyriHaximus\React\ChildProcess\Messenger\Messages\Payload;
 
 /**
@@ -21,7 +20,7 @@ interface SubProcessApplicationInterface
 
     /**
      * @param Payload $payload
-     * @return WampResponse
+     * @return array
      */
     public function run(Payload $payload);
 
