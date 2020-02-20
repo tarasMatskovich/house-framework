@@ -20,7 +20,7 @@ class Pipeline implements PipelineInterface
 {
 
     /**
-     * @var ActionInterface[]
+     * @var ActionInterface[]|\Closure[]
      */
     private $pipes = [];
 

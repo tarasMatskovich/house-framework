@@ -69,16 +69,8 @@ class SubProcessApplication implements SubProcessApplicationInterface
             $actionRoute = $payload[PayloadKeysEnum::ACTION];
             $action = $this->container->get($actionRoute);
             $arguments = $payload[PayloadKeysEnum::ATTRIBUTES];
+            $attributes = $attributes = json_decode($arguments, true);
             $request = $this->requestBuilder->build();
-            $attributesFromArguments = $arguments[0] ?? null;
-            $attributes = [];
-            if ($attributesFromArguments) {
-                if (is_string($attributesFromArguments)) {
-                    $attributes = json_decode($attributesFromArguments, null);
-                } else {
-                    $attributes = (array)$attributesFromArguments;
-                }
-            }
             $request = $this->requestBuilder->attachAttributesToRequest($request, $attributes);
             $pipeline = $this->pipelineBuilder->build($actionRoute);
             $reflectionClass = new \ReflectionClass($action);
