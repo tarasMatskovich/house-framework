@@ -9,10 +9,8 @@
 namespace houseframework\app\publisher\factory;
 
 
-use houseframework\app\config\ConfigInterface;
 use houseframework\app\factory\enum\ApplicationTypesEnum;
 use houseframework\app\publisher\PublisherInterface;
-use houseframework\app\publisher\WampPublisher;
 
 /**
  * Class PublisherFactory
@@ -22,17 +20,19 @@ class PublisherFactory implements PublisherFactoryInterface
 {
 
     /**
-     * @var ConfigInterface
+     * @var PublisherInterface
      */
-    private $config;
+    private $wampPublisher;
 
     /**
      * PublisherFactory constructor.
-     * @param ConfigInterface $config
+     * @param PublisherInterface $wampPublisher
      */
-    public function __construct(ConfigInterface $config)
+    public function __construct(
+        PublisherInterface $wampPublisher
+    )
     {
-        $this->config = $config;
+        $this->wampPublisher = $wampPublisher;
     }
 
     /**
@@ -44,9 +44,7 @@ class PublisherFactory implements PublisherFactoryInterface
     {
         switch ($applicationKey) {
             case ApplicationTypesEnum::APP_WAMP:
-                return new WampPublisher(
-                    $this->config->get('application.clientSession')
-                );
+                return $this->wampPublisher;
                 break;
             default:
                 throw new \Exception('This application type does not support publishing', 500);
